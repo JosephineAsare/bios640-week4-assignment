@@ -1,0 +1,98 @@
+---
+title: "NHANES Dashboard"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rio)
+library(here)
+library(flexdashboard)
+
+nhanes_data <- import(here("data", "cleaned_NHANES.csv"))
+```
+
+
+```{r create-average-sbp}
+nhanes_data <- nhanes_data %>%
+  mutate(
+    average_sbp = rowMeans(
+      select(
+        .,
+        systolic_bp_1,
+        systolic_bp_2,
+        systolic_bp_3,
+        systolic_bp_4
+      ),
+      na.rm = TRUE
+    ),
+    average_sbp = ifelse(
+      is.nan(average_sbp),
+      NA,
+      average_sbp
+    )
+  )
+```
+
+
+Row {data-height=650}
+-------------------------------------
+
+### NHANES Sample
+
+```{r sample-plot, echo=FALSE}
+ggplot(nhanes_data, aes(x = age, fill = gender)) +
+  geom_histogram(
+    binwidth = 5,
+    boundary = 15,
+    position = "dodge"
+  ) +
+  labs(
+    title = "Age Distribution of the NHANES Sample",
+    x = "Age",
+    y = "Count",
+    fill = "Sex"
+  ) +
+  theme_minimal()
+```
+
+
+Row {data-height=350}
+-------------------------------------
+
+### Percentage Aged 21 or Older
+
+```{r age-gauge}
+percentage_21_plus <- mean(
+  nhanes_data$age >= 21,
+  na.rm = TRUE
+) * 100
+
+gauge(
+  value = percentage_21_plus,
+  min = 0,
+  max = 100,
+  sectors = gaugeSectors(
+    success = c(80, 100),
+    warning = c(50, 80),
+    danger = c(0, 50)
+  )
+)
+```
+
+### Average Systolic Blood Pressure Above 120 mm Hg
+
+```{r sbp-value}
+percentage_sbp_above_120 <- mean(
+  nhanes_data$average_sbp > 120,
+  na.rm = TRUE
+) * 100
+
+valueBox(
+  value = paste0(round(percentage_sbp_above_120, 1), "%"),
+  caption = "Participants with average systolic BP > 120 mm Hg",
+  color = "blue"
+)
+```
