@@ -3,9 +3,13 @@ title: "DATA VISUALIZATION AND EXPLORATION"
 author: "Josephine Abena Agyakwaa Asare"
 date: "2026-09-25"
 output:
-  pdf_document:
+  html_document:
+    theme: united
+    highlight: zenburn
     toc: true
-    number_sections: true
+    toc_float: true
+    toc_depth: 2
+    code_folding: show
 ---
 
 
@@ -29,8 +33,8 @@ visualizations.
 Throughout the analysis, cleaned and appropriately labeled variables were used where applicable. The visualizations are designed to communicate the distributions and relationships in the data while following the requirements of the assignment.
 
 
-# Exercise 1: Reproducing and Arranging ggplot2 Figures
-
+# Exercise 1: Reproducing and Arranging ggplot2 Figures {.tabset}
+ 
 In this exercise, the two figures were reproduced using the cleaned NHANES data. The first figure used five-year age bins and displays the distribution of age by gender. The second figure displays proportions across the cleaned ethnicity categories, with the bars divided by gender. The two figures were then arranged using both `plot_grid()` and
 `ggarrange()`.
 
@@ -42,12 +46,13 @@ library(rio)
 library(here)
 library(cowplot)
 library(ggpubr)
+library(DT)
 ```
 
 ## Importing the Cleaned NHANES Dataset
 
 ```{r importing-data}
-nhanes_data<- import(here("DATA", "cleaned_NHANES.csv"))
+nhanes_data<- import(here("data", "cleaned_NHANES.csv"))
 ```
 
 ## Inspecting the Dataset
@@ -76,7 +81,9 @@ table(nhanes_data$ethnicity_2)
 
 
 
-## Figure 1: Age Distribution by Sex
+## Individual Figures
+
+### Figure 1: Age Distribution by Sex
 
 The first figure shows the distribution of age among participants. Age is grouped into five-year intervals, and the bars are filled according to gender.
 
@@ -99,7 +106,8 @@ figure1 <- nhanes_data %>%
 figure1
 ```
 
-## Figure 2: Sex Distribution by Ethnicity
+
+### Figure 2: Sex Distribution by Ethnicity
 
 The second figure shows the proportion of participants by sex within each ethnicity category. The bars are scaled to the same height using proportional stacking, allowing the distribution of males and females to be compared across the six ethnicity categories.
 
@@ -130,7 +138,10 @@ figure2 <- nhanes_data %>%
 figure2
 ```
 
-## Arranging the Figures with `plot_grid()`
+
+## Combined Figures
+
+### Arranging the Figures with `plot_grid()`
 
 The two figures have been combined using the `plot_grid()` function from
 the `cowplot` package. The figures are arranged side by side for direct
@@ -147,7 +158,8 @@ combined_cowplot <- plot_grid(
 combined_cowplot
 ```
 
-## Arranging the Figures with `ggarrange()`
+
+### Arranging the Figures with `plot_grid()`
 
 The figures have also been arranged using the `ggarrange()` function from the
 `ggpubr` package. 
@@ -164,7 +176,8 @@ combined_ggarrange <- ggarrange(
 combined_ggarrange
 ```
 
-## Comparison of the Two Arrangement Methods
+
+### Comparison of the Two Arrangement Methods
 
 From the above figures both packages produced the same layout. I did not notice a any visual difference between the output produced by `plot_grid()` from the
 `cowplot` package and `ggarrange()` from the `ggpubr` package. Although the functions
@@ -172,6 +185,19 @@ come from different packages and have different options for arranging and custom
 
 
 # Exercise 2: Visualizing Key Characteristics
+
+### Interactive Cleaned NHANES Dataset
+
+```{r interactive-table}
+DT::datatable(
+  nhanes_data,
+  options = list(
+    pageLength = 10,
+    scrollX = TRUE
+  ),
+  filter = "top"
+)
+```
 
 This exercise the distribution of age, gender, and the two ethnicity variables in the cleaned NHANES dataset were explored as required. Appropriate `ggplot2` visualizations were created for each variable, and descriptive summaries were used to describe their distributions and identify missing values. Each plot was saved using `ggsave()` for later use.
 
