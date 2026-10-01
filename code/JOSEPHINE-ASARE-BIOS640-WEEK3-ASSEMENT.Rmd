@@ -1,0 +1,737 @@
+---
+title: "DATA VISUALIZATION AND EXPLORATION"
+author: "Josephine Abena Agyakwaa Asare"
+date: "2026-09-25"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+
+# INTRODUCTION
+
+This report explores and visualizes data from the NHANES dataset using ggplot2 and related R packages. The analysis focuses on effective data visualization, clear presentation of distributions, and the exploration of relationships between demographic characteristics and health measurements.
+
+The report is organized into four exercises. Exercise 1 focuses on reproducing and arranging existing ggplot2 figures. Exercise 2 examines key characteristics of the NHANES sample, including age, gender, and ethnicity. Exercise 3 improves a visualization of changes in body weight over time by expressing each participant's measurements relative to their baseline. Finally, Exercise 4 explores the relationship between age,
+gender, and systolic blood pressure using descriptive and faceted
+visualizations.
+
+Throughout the analysis, cleaned and appropriately labeled variables were used where applicable. The visualizations are designed to communicate the distributions and relationships in the data while following the requirements of the assignment.
+
+
+# Exercise 1: Reproducing and Arranging ggplot2 Figures
+
+In this exercise, the two figures were reproduced using the cleaned NHANES data. The first figure used five-year age bins and displays the distribution of age by gender. The second figure displays proportions across the cleaned ethnicity categories, with the bars divided by gender. The two figures were then arranged using both `plot_grid()` and
+`ggarrange()`.
+
+## Loading the required packages 
+
+```{r loading packages, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(here)
+library(cowplot)
+library(ggpubr)
+```
+
+## Importing the Cleaned NHANES Dataset
+
+```{r importing-data}
+nhanes_data<- import(here("DATA", "cleaned_NHANES.csv"))
+```
+
+## Inspecting the Dataset
+```{r inspecting-data}
+names(nhanes_data)
+str(nhanes_data)
+```
+
+## Examining the Cleaned Categorical Variables
+
+The cleaned dataset contains descriptive labels for the categorical variables. The categories were examined before reproducing the figures to ensure that the appropriate cleaned variables are used.
+
+```{r checking-categories and frequencies}
+unique(nhanes_data$gender)
+
+unique(nhanes_data$ethnicity_1)
+
+unique(nhanes_data$ethnicity_2)
+
+table(nhanes_data$gender)
+
+table(nhanes_data$ethnicity_1)
+
+table(nhanes_data$ethnicity_2)
+```
+
+
+
+## Figure 1: Age Distribution by Sex
+
+The first figure shows the distribution of age among participants. Age is grouped into five-year intervals, and the bars are filled according to gender.
+
+
+```{r figure-1}
+figure1 <- nhanes_data %>%
+  ggplot(aes(x = age, fill = gender)) +
+  geom_histogram(
+    binwidth = 5,
+    boundary = 15,
+    position = "dodge"
+  ) +
+  labs(
+    x = "Age",
+    y = "Count",
+    fill = "Gender"
+  ) +
+  theme_minimal()
+
+figure1
+```
+
+## Figure 2: Sex Distribution by Ethnicity
+
+The second figure shows the proportion of participants by sex within each ethnicity category. The bars are scaled to the same height using proportional stacking, allowing the distribution of males and females to be compared across the six ethnicity categories.
+
+```{r figure-2}
+figure2 <- nhanes_data %>%
+  mutate(
+    ethnicity_2 = factor(
+      ethnicity_2,
+      levels = c(
+        "Mexican",
+        "Other Hispanic",
+        "White",
+        "Black",
+        "Asian",
+        "Other"
+      )
+    )
+  ) %>%
+  ggplot(aes(x = ethnicity_2, fill = gender)) +
+  geom_bar(position = "fill") +
+  labs(
+    x = "Ethnicity",
+    y = "Proportion",
+    fill = "Gender"
+  ) +
+  theme_minimal()
+
+figure2
+```
+
+## Arranging the Figures with `plot_grid()`
+
+The two figures have been combined using the `plot_grid()` function from
+the `cowplot` package. The figures are arranged side by side for direct
+comparison.
+
+```{r plot-grid}
+combined_cowplot <- plot_grid(
+  figure1,
+  figure2,
+  ncol = 2,
+  labels = c("A", "B")
+)
+
+combined_cowplot
+```
+
+## Arranging the Figures with `ggarrange()`
+
+The figures have also been arranged using the `ggarrange()` function from the
+`ggpubr` package. 
+
+```{r ggarrange}
+combined_ggarrange <- ggarrange(
+  figure1,
+  figure2,
+  ncol = 2,
+  nrow = 1,
+  labels = c("A", "B")
+)
+
+combined_ggarrange
+```
+
+## Comparison of the Two Arrangement Methods
+
+From the above figures both packages produced the same layout. I did not notice a any visual difference between the output produced by `plot_grid()` from the
+`cowplot` package and `ggarrange()` from the `ggpubr` package. Although the functions
+come from different packages and have different options for arranging and customizing plots, I used the same layout specifications in this exercise and both resulted in very similar graphical output.
+
+
+# Exercise 2: Visualizing Key Characteristics
+
+This exercise the distribution of age, gender, and the two ethnicity variables in the cleaned NHANES dataset were explored as required. Appropriate `ggplot2` visualizations were created for each variable, and descriptive summaries were used to describe their distributions and identify missing values. Each plot was saved using `ggsave()` for later use.
+
+## Missing Values
+
+The number of missing observations is calculated for each variable
+before creating the visualizations.
+
+```{r missing-values}
+missing_values <- data.frame(
+  Variable = c("Age", "Gender", "Ethnicity 1", "Ethnicity 2"),
+  Missing = c(
+    sum(is.na(nhanes_data$age)),
+    sum(is.na(nhanes_data$gender)),
+    sum(is.na(nhanes_data$ethnicity_1)),
+    sum(is.na(nhanes_data$ethnicity_2))
+  )
+)
+
+missing_values
+```
+
+## Descriptive Summaries
+
+```{r descriptive-summaries}
+summary(nhanes_data$age)
+```
+
+```{r gender-counts}
+table(nhanes_data$gender, useNA = "ifany")
+```
+
+```{r ethnicity1-counts}
+table(nhanes_data$ethnicity_1, useNA = "ifany")
+```
+
+```{r ethnicity2-counts}
+table(nhanes_data$ethnicity_2, useNA = "ifany")
+```
+
+
+## Age Distribution
+
+A histogram was used to visualize the distribution of age because age is a quantitative variable.
+
+```{r age-plot}
+age_plot <- ggplot(nhanes_data, aes(x = age)) +
+  geom_histogram(
+    binwidth = 5,
+    boundary = 0,
+    color = "white",
+    fill = "steelblue"
+  ) +
+  labs(
+    title = "Distribution of Age",
+    x = "Age (years)",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+age_plot
+```
+
+```{r save-age-plot}
+ggsave(
+  filename = "age_distribution.png",
+  plot = age_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
+```
+
+The age variable ranges from 0 to 80 years. The mean age is 32.52 years, while the median age is 28 years. The first quartile is 10 years and the third quartile is 54 years. The histogram shows the distribution of ages across the sample. There are no missing values for age.
+
+
+## Gender Distribution
+
+A bar chart was used to display the number of observations in each gender category.
+
+```{r gender-plot}
+gender_plot <- ggplot(nhanes_data, aes(x = gender)) +
+  geom_bar(
+    fill = "red",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of Gender",
+    x = "Gender",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+gender_plot
+```
+
+```{r save-gender-plot}
+ggsave(
+  filename = "gender_distribution.png",
+  plot = gender_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
+```
+
+The gender variable contains two categories, Female and Male. There are 14,948 females and 14,452 males in the dataset. The two categories have similar numbers of observations, with females representing a slightly larger count. There are no missing values for gender.
+
+
+## Distribution of Ethnicity 1
+
+A bar chart was used to display the number of observations in each
+category of `ethnicity_1`.
+
+```{r ethnicity1-plot}
+ethnicity1_plot <- ggplot(nhanes_data, aes(x = ethnicity_1)) +
+  geom_bar(
+    fill = "darkgreen",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of Ethnicity 1",
+    x = "Ethnicity",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+ethnicity1_plot
+```
+
+```{r save-ethnicity1-plot}
+ggsave(
+  filename = "ethnicity1_distribution.png",
+  plot = ethnicity1_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
+```
+
+
+The `ethnicity_1` variable contains five categories: Black, Mexican, Other, Other Hispanic, and White. White is the largest category with 9,890 observations, followed by Black with 6,511 observations and Mexican with 5,018 observations. Other and Other Hispanic have 4,893 and 3,088 observations, respectively. There are no missing values for `ethnicity_1`.
+
+
+## Distribution of Ethnicity 2
+
+A bar chart is used to display the number of observations in each
+category of `ethnicity_2`.
+
+```{r ethnicity2-plot}
+ethnicity2_plot <- ggplot(nhanes_data, aes(x = ethnicity_2)) +
+  geom_bar(
+    fill = "coral",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of Ethnicity 2",
+    x = "Ethnicity",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+ethnicity2_plot
+```
+
+```{r save-ethnicity2-plot}
+ggsave(
+  filename = "ethnicity2_distribution.png",
+  plot = ethnicity2_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
+```
+
+
+The `ethnicity_2` variable contains six categories: Asian, Black, Mexican, Other, Other Hispanic, and White. White is the largest category with 9,890 observations, followed by Black with 6,511 and Mexican with 5,018 observations. Asian has 3,284 observations, Other has 1,609 observations, and Other Hispanic has 3,088 observations.
+There are no missing values for `ethnicity_2`.
+
+
+## Comparison of the Two Ethnicity Variables
+
+The two ethnicity variables contain several categories in common, which are  Black, Mexican, Other Hispanic, and White. But,`ethnicity_2` contains a separate Asian category with 3,284 observations, whereas `ethnicity_1` does not have a separate Asian category. The number of observations classified as Other also differs between the two variables, where  `ethnicity_1` has 4,893 observations and 1,609 observations for `ethnicity_2`.
+
+`ethnicity_2` will be retained because it provides a more detailed categorization by identifying Asian observations separately. This is also the ethnicity variable corresponding to the six category classification used in the original variable for the
+figures in Exercise 1. Therefore, `ethnicity_1` will be removed from the dataset.
+
+## Removing the Selected Ethnicity Variable
+
+```{r removing-ethnicity1}
+nhanes_data <- nhanes_data %>%
+  select(-ethnicity_1)
+```
+
+The remaining variables was checked below to confirm that `ethnicity_1`has been removed.
+
+```{r verify-variables}
+names(nhanes_data)
+```
+
+# Exercise 3: Improving a ggplot Figure
+
+## Importing and Inspecting the Diet Data
+
+This analysis was used to visualize how each participant's weight changes over the four month study period relative to their baseline weight at week 0. The data are first imported and inspected to identify the variables required for the visualization.
+
+```{r import-diet-data}
+diet_data <- import(here("DATA", "diet.csv"))
+
+names(diet_data)
+str(diet_data)
+head(diet_data)
+```
+
+## Calculating Change from Baseline
+
+Because participants have different baseline weights, weight change was calculated separately for each participant. For each observation, the baseline weight is the participant's weight at week 0. Change from baseline was then calculate  as the current weight minus the participant's baseline weight.
+
+```{r calculate-baseline-change}
+diet_data <- diet_data %>%
+  group_by(Participant) %>%
+  mutate(
+    baseline_weight = Weight[Week == 0][1],
+    weight_change = Weight - baseline_weight
+  ) %>%
+  ungroup()
+
+head(diet_data)
+```
+
+```{r check-baseline}
+diet_data %>%
+  filter(Week == 0) %>%
+  select(Participant, Week, Weight, baseline_weight, weight_change)
+```
+
+
+## Proposed Improvements and Rationale
+
+To address the issues in my colleagues"s work, the weight measurements will be transformed
+into change from baseline for each participant. For each observation, the participant's weight at week 0 will be subtracted from their weight at the corresponding week. This will ensures that every participant begins at zero, regardless of their initial body weight. Negative values will represent weight loss relative to baseline, while positive values represent weight gain.
+
+The redesigned figure will retain individual participant trajectories because the research objective asks how each participant weight change over time. Each participant will therefore be represented
+by a separate line, with color used to distinguish participants. Transparency will be used to reduce the visual impact of overlapping trajectories.
+ 
+A horizontal dashed line at zero will be added to represent the baseline level. This makes it immediately possible to determine whether a participant is above or below their baseline weight at any point in
+the study. The x-axis will display study week, while the y-axis will indicate change in weight from baseline in kilograms. These changes will make the figure more directly aligned with the research
+question and retain information about individual participant trajectories.
+
+
+
+## Improved Figure
+
+The improved figure displays each participant's change in weight relative to their own baseline weight at week 0. A horizontal line at zero represents no change from baseline. Negative values indicate weight loss, whereas positive values indicate weight gain.
+
+
+
+
+```{r improved-figure}
+improved_figure <- ggplot(
+  diet_data,
+  aes(
+    x = Week,
+    y = weight_change,
+    group = Participant,
+    color = factor(Participant)
+  )
+) +
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.7
+  ) +
+  geom_line(
+    alpha = 0.5,
+    linewidth = 0.8
+  ) +
+  geom_point(
+    alpha = 0.5,
+    size = 1.5
+  ) +
+  labs(
+    title = "Change in Body Weight from Baseline",
+    subtitle = "Individual participant trajectories over 16 weeks",
+    x = "Study Week",
+    y = "Change in Weight from Baseline (kg)",
+    color = "Participant"
+  ) +
+  scale_x_continuous(
+    breaks = seq(0, 16, by = 2)
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right"
+  )
+
+improved_figure
+```
+
+
+
+
+```{r save-improved-figure}
+ggsave(
+  filename = "improved_diet_weight_figure.png",
+  plot = improved_figure,
+  width = 9,
+  height = 6,
+  dpi = 300
+)
+```
+
+
+
+# Exercise 4: Exploring Relationships Through Visualizations
+
+This analysis covers the relationship between age, gender, and systolic blood pressure (SBP). Because four SBP measurements are available for each participant, an average SBP measure was calculated and used as the main measure of blood pressure. Participants with
+missing values for age, gender, or average SBP were  then excluded from the sample.
+
+
+## Creating Average Systolic Blood Pressure
+
+The average systolic blood pressure was calculated from the four available readings for each participant.
+
+
+```{r create-average-sbp}
+nhanes_data <- nhanes_data %>%
+  mutate(
+    average_sbp = rowMeans(
+      select(
+        .,
+        systolic_bp_1,
+        systolic_bp_2,
+        systolic_bp_3,
+        systolic_bp_4
+      ),
+      na.rm = TRUE
+    ),
+    average_sbp = ifelse(
+      is.nan(average_sbp),
+      NA,
+      average_sbp
+    )
+  )
+
+summary(nhanes_data$average_sbp)
+
+sum(is.na(nhanes_data$average_sbp))
+```
+
+
+## Creating the Final Analytic Sample
+
+Participants with missing age, gender, or average systolic blood pressure were excluded from the final analysis.
+
+```{r final-sample}
+nhanes_final <- nhanes_data %>%
+  filter(
+    !is.na(age),
+    !is.na(gender),
+    !is.na(average_sbp)
+  )
+
+nrow(nhanes_data)
+nrow(nhanes_final)
+```
+
+
+## Creating Systolic Blood Pressure Categories
+
+Participants were classified into four systolic blood pressure categories based on their average SBP.
+
+```{r sbp-categories}
+nhanes_final <- nhanes_final %>%
+  mutate(
+    sbp_category = case_when(
+      average_sbp < 120 ~ "Normal",
+      average_sbp >= 120 & average_sbp < 130 ~ "Elevated",
+      average_sbp >= 130 & average_sbp < 140 ~ "Stage 1 hypertension",
+      average_sbp >= 140 ~ "Stage 2 hypertension"
+    ),
+    sbp_category = factor(
+      sbp_category,
+      levels = c(
+        "Normal",
+        "Elevated",
+        "Stage 1 hypertension",
+        "Stage 2 hypertension"
+      )
+    )
+  )
+
+table(nhanes_final$sbp_category)
+```
+
+## Final Sample
+
+After excluding participants with missing age, gender, or average systolic blood pressure, the sample decreased from 29,400 to 21,604 participants.
+
+
+## Systolic Blood Pressure Categories
+
+The distribution of participants across the four systolic blood pressure categories was examined in the final sample.
+
+
+```{r sbp-category-plot}
+sbp_category_plot <- ggplot(
+  nhanes_final,
+  aes(x = sbp_category)
+) +
+  geom_bar(
+    fill = "brown",
+    color = "white"
+  ) +
+  labs(
+    title = "Distribution of Systolic Blood Pressure Categories",
+    x = "Systolic Blood Pressure Category",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+
+sbp_category_plot
+```
+
+
+
+## Gender Distribution in the Final Sample
+
+The gender distribution was also examined after excluding participants with incomplete information.
+
+```{r final-gender-plot}
+final_gender_plot <- ggplot(
+  nhanes_final,
+  aes(x = gender)
+) +
+  geom_bar(
+    fill = "purple",
+    color = "white"
+  ) +
+  labs(
+    title = "Gender Distribution in the Final Sample",
+    x = "Gender",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+final_gender_plot
+```
+
+
+
+## Reusing the Exercise 2 age plot
+
+The age distribution in the final sample was compared with the age distribution observed in Exercise 2.
+
+```{r final-age-plot}
+final_age_plot <- ggplot(
+  nhanes_final,
+  aes(x = age)
+) +
+  geom_histogram(
+    binwidth = 5,
+    boundary = 0,
+    color = "black",
+    fill = "pink"
+  ) +
+  labs(
+    title = "Age Distribution in the Final Sample",
+    x = "Age (years)",
+    y = "Count"
+  ) +
+  theme_minimal()
+
+final_age_plot
+```
+
+
+## Comparing the Final Sample with the Original Sample
+
+The distributions of age and gender were compared before and after excluding participants with incomplete information.
+
+```{r final-sample-comparison}
+summary(nhanes_final$age)
+
+table(nhanes_final$gender)
+
+table(nhanes_final$sbp_category)
+```
+
+## Comparing Age Distributions
+
+The age distribution from Exercise 2 was compared with the distribution in the final sample. The plots are displayed with the old figure showing first while the new follows to make changes in the distribution easier to identify. The final sample has a higher mean and median age, indicating a shift toward older participants after excluding observations with incomplete information.
+
+
+```{r reused-age-plot, out.width="80%"}
+knitr::include_graphics(
+  here("FIGURES", "age_distribution.png")
+)
+```
+
+```{r final-age-comparison}
+final_age_plot
+```
+
+
+## Relationship Between Age, Gender, and Systolic Blood Pressure
+
+The relationship between age, gender, and systolic blood pressure category was explored using a faceted visualization. Age was grouped into categories and the distributions of systolic blood pressure categories were compared between females and males.
+
+
+```{r final-faceted-plot}
+nhanes_final <- nhanes_final %>%
+  mutate(
+    age_group = factor(
+      age_cat,
+      levels = c("0-17", "18-39", "40-59", "60+")
+    ),
+    sbp_category = factor(
+      sbp_category,
+      levels = c(
+        "Normal",
+        "Elevated",
+        "Stage 1 hypertension",
+        "Stage 2 hypertension"
+      )
+    )
+  )
+
+ggplot(
+  nhanes_final,
+  aes(x = age_group, fill = sbp_category)
+) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ gender) +
+  scale_fill_manual(
+    values = c(
+      "Normal" = "lightgreen",
+      "Elevated" = "pink",
+      "Stage 1 hypertension" = "lightcoral",
+      "Stage 2 hypertension" = "red"
+    )
+  ) +
+  labs(
+    title = "Systolic Blood Pressure Categories by Age and Gender",
+    x = "Age Group",
+    y = "Proportion",
+    fill = "SBP Category"
+  ) +
+  theme_classic()
+```
+
+
+The faceted plot shows that normal systolic blood pressure is common among younger individuals (0–17), while elevated SBP and hypertension is more in the 40–59 and 60+ age groups. This pattern is approximately the same in both females and males, although the proportions of Stage 1 and Stage 2 hypertension differ slightly between genders, particularly among those aged 60+. Overall, age shows a stronger pattern of variation in SBP categories than gender, with older groups having a much greater proportion of hypertension.
